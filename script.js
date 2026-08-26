@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
         globalTeamSelect.addEventListener('change', (e) => {
             selectedTeam = e.target.value;
             validateForm();
+            if (selectedTeam && eventSelect.value) {
+                loadExistingScores(selectedTeam, eventSelect.value);
+            }
         });
     }
 
@@ -60,10 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 3. Dynamic Form Schemas
+    // 3. Dynamic Form Schemas & Score Pre-population
     eventSelect.addEventListener('change', () => {
         renderFormForEvent(eventSelect.value);
         validateForm();
+        if (selectedTeam && eventSelect.value) {
+            loadExistingScores(selectedTeam, eventSelect.value);
+        }
     });
 
     function renderFormForEvent(eventName) {
@@ -190,6 +196,83 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Load existing scores from Google Sheet
+    async function loadExistingScores(team, eventName) {
+        try {
+            const rawRows = await fetchRawSheetRows(eventName);
+            if (!rawRows || rawRows.length === 0) return;
+
+            const matchingRows = rawRows.filter(r => r && r.c && r.c[0] && String(r.c[0].v).trim() === String(team).trim());
+            if (matchingRows.length === 0) return;
+
+            const getVal = (cell) => cell ? cell.v : '';
+
+            if (eventName === 'Dark Side of the Rainbow' || eventName === 'The Fast & The Furious') {
+                const c = matchingRows[0].c;
+                if (c[1]) {
+                    const rxEl = document.getElementById('field-rx');
+                    if (rxEl) rxEl.value = getVal(c[1]);
+                }
+                if (c[2]) {
+                    const minEl = document.getElementById('field-minutes');
+                    if (minEl) minEl.value = getVal(c[2]);
+                }
+                if (c[3]) {
+                    const secEl = document.getElementById('field-seconds');
+                    if (secEl) secEl.value = getVal(c[3]);
+                }
+            } else if (eventName === 'The Three Amigos') {
+                const c = matchingRows[0].c;
+                if (c[1]) {
+                    const calEl = document.getElementById('field-calories');
+                    if (calEl) calEl.value = getVal(c[1]);
+                }
+            } else if (eventName === 'Tire Fire') {
+                const c = matchingRows[0].c;
+                if (c[1]) {
+                    const rxEl = document.getElementById('field-rx');
+                    if (rxEl) rxEl.value = getVal(c[1]);
+                }
+                if (c[2]) {
+                    const repsEl = document.getElementById('field-reps');
+                    if (repsEl) repsEl.value = getVal(c[2]);
+                }
+            } else if (eventName === 'The Jerk') {
+                matchingRows.forEach((rObj, idx) => {
+                    const memberNum = idx + 1;
+                    const c = rObj.c;
+                    if (c[1]) {
+                        const genderEl = document.getElementById(`field-gender-${memberNum}`);
+                        if (genderEl) genderEl.value = getVal(c[1]);
+                    }
+                    if (c[2]) {
+                        const weightEl = document.getElementById(`field-weight-${memberNum}`);
+                        if (weightEl) weightEl.value = getVal(c[2]);
+                    }
+                });
+            } else if (eventName === "White Men Can't Jump") {
+                matchingRows.forEach((rObj, idx) => {
+                    const memberNum = idx + 1;
+                    const c = rObj.c;
+                    if (c[1]) {
+                        const genderEl = document.getElementById(`field-gender-${memberNum}`);
+                        if (genderEl) genderEl.value = getVal(c[1]);
+                    }
+                    if (c[2]) {
+                        const heightEl = document.getElementById(`field-height-${memberNum}`);
+                        if (heightEl) heightEl.value = getVal(c[2]);
+                    }
+                    if (c[3]) {
+                        const ftEl = document.getElementById(`field-ft-${memberNum}`);
+                        if (ftEl) ftEl.value = getVal(c[3]);
+                    }
+                });
+            }
+        } catch (err) {
+            console.warn('Could not load existing scores for pre-population:', err);
+        }
+    }
+
     // 4. Form Submission (POST to Google Apps Script Endpoint)
     scoreForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -290,17 +373,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 5. Direct Google Sheet Reading via Google Visualization API (gviz/tq)
-    async function fetchSheetData(sheetName) {
+    async function fetchRawSheetRows(sheetName) {
         const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
         const res = await fetch(url);
         if (!res.ok) {
             throw new Error(`HTTP Error ${res.status}`);
         }
         const text = await res.text();
-
-        // Strip Google's JSONP wrapper to get clean JSON
         const json = JSON.parse(text.substring(47, text.length - 2));
-        return json.table.rows.map(row => row.c.map(cell => cell ? cell.v : ""));
+        return json.table.rows;
+    }
+
+    async function fetchSheetData(sheetName) {
+        const rows = await fetchRawSheetRows(sheetName);
+        return rows.map(row => row.c ? row.c.map(cell => cell ? cell.v : "") : []);
     }
 
     // 6. Live Leaderboard Tab Fetch & Render
