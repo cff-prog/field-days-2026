@@ -3,29 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World - GitHub Pages</title>
+    <title>Field Day Event Scoring</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app-container">
         <header>
-            <button id="theme-toggle" aria-label="Toggle Theme">🌙 Dark Mode</button>
-        </header>
-        <main>
-            <div class="card">
-                <div class="badge">GitHub Pages Ready</div>
-                <h1>Hello, World! 👋</h1>
-                <p>Welcome to your newly deployed static website hosted on GitHub Pages!</p>
-                <div class="interactive-section">
-                    <button id="greet-btn" class="btn">Click for a Greeting</button>
-                    <p id="greeting-message" class="greeting-text"></p>
-                </div>
+            <h1>Field Day 2025</h1>
+            <div id="team-header-container">
+                <!-- Team indicator badge or dropdown rendered dynamically -->
             </div>
+            <nav class="tabs">
+                <button id="tab-score-entry" class="tab-btn active" data-tab="score-entry">Score Entry</button>
+                <button id="tab-leaderboard" class="tab-btn" data-tab="leaderboard">Live Leaderboard</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- View 1: Score Entry -->
+            <section id="view-score-entry" class="tab-view active">
+                <div class="card">
+                    <h2>Log Event Score</h2>
+                    <div class="form-group">
+                        <label for="event-select">Select Event:</label>
+                        <select id="event-select">
+                            <option value="">-- Choose an Event --</option>
+                            <option value="Dark Side of the Rainbow">Dark Side of the Rainbow</option>
+                            <option value="The Fast & The Furious">The Fast & The Furious</option>
+                            <option value="The Three Amigos">The Three Amigos</option>
+                            <option value="Tire Fire">Tire Fire</option>
+                            <option value="The Jerk">The Jerk</option>
+                            <option value="White Men Can't Jump">White Men Can't Jump</option>
+                        </select>
+                    </div>
+
+                    <form id="score-form">
+                        <div id="dynamic-form-fields">
+                            <!-- Dynamic inputs populated based on selected event -->
+                            <p class="placeholder-text">Please select an event above to display scoring fields.</p>
+                        </div>
+
+                        <div id="form-status" class="status-message"></div>
+
+                        <button type="submit" id="submit-btn" class="btn btn-primary" disabled>Submit Score</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- View 2: Live Leaderboard -->
+            <section id="view-leaderboard" class="tab-view">
+                <div class="card">
+                    <div class="leaderboard-header">
+                        <h2>Overall Rankings</h2>
+                        <button id="refresh-leaderboard" class="btn btn-secondary">🔄 Refresh</button>
+                    </div>
+                    <div id="leaderboard-status" class="status-message"></div>
+                    <div class="table-container">
+                        <table id="leaderboard-table">
+                            <thead>
+                                <tr id="leaderboard-thead-tr">
+                                    <th>Rank</th>
+                                    <th>Team</th>
+                                    <th>Total Points</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-tbody">
+                                <tr>
+                                    <td colspan="3" class="loading-cell">Click refresh or open tab to load leaderboard...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </main>
+
         <footer>
-            <p>Hosted with ❤️ on <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a></p>
+            <p>Field Day Event Scoring SPA &bull; Hosted on GitHub Pages</p>
         </footer>
     </div>
+
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
