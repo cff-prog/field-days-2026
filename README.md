@@ -25,7 +25,7 @@ You can host this site for free on GitHub Pages in just a few steps:
    - Set **Source** to `Deploy from a branch`.
    - Set **Branch** to `main` (or `master`) and select `/ (root)` as the folder.
 6. Click **Save**.
-7. Wait 1-2 minutes. Your site will be live at `https://cff-prog/field-days-2026/`.
+7. Wait 1-2 minutes. Your site will be live at `https://cff-prog.github.io/field-days-2026/`.
 
 ---
 
