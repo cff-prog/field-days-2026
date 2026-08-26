@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. Form Submission (POST)
+    // 4. Form Submission (POST to Google Apps Script Endpoint)
     scoreForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -289,7 +289,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return payloads;
     }
 
-    // 5. Live Leaderboard (GET)
+    // 5. Direct Google Sheet Reading via Google Visualization API (gviz/tq)
+    async function fetchSheetData(sheetName) {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}`);
+        }
+        const text = await res.text();
+
+        // Strip Google's JSONP wrapper to get clean JSON
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        return json.table.rows.map(row => row.c.map(cell => cell ? cell.v : ""));
+    }
+
+    // 6. Live Leaderboard Tab Fetch & Render
     refreshLeaderboardBtn.addEventListener('click', () => {
         fetchLeaderboard();
     });
@@ -298,16 +312,12 @@ document.addEventListener('DOMContentLoaded', () => {
         showStatus(leaderboardStatus, 'info', 'Loading live rankings...');
         leaderboardTbody.innerHTML = `
             <tr>
-                <td colspan="3" class="loading-cell">Fetching summary data...</td>
+                <td colspan="3" class="loading-cell">Fetching summary data directly from Google Sheet...</td>
             </tr>
         `;
 
         try {
-            const res = await fetch(`${APPS_SCRIPT_URL}?sheetName=Summary`);
-            if (!res.ok) {
-                throw new Error(`HTTP Error ${res.status}`);
-            }
-            const data = await res.json();
+            const data = await fetchSheetData('Summary');
             renderLeaderboard(data);
             showStatus(leaderboardStatus, 'success', 'Leaderboard updated.');
             setTimeout(() => {
@@ -334,10 +344,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Assuming first row is headers if array of arrays or array of objects
+        // Assuming first row is headers
         if (Array.isArray(data[0])) {
             const headers = data[0];
-            leaderboardTheadTr.innerHTML = headers.map(h => `<th>${escapeHtml(String(h))}</th>`).join('');
+            leaderboardTheadTr.innerHTML = headers.map(h => `<th>${escapeHtml(String(h !== null && h !== undefined ? h : ''))}</th>`).join('');
 
             const rows = data.slice(1);
             if (rows.length === 0) {
@@ -348,15 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
             leaderboardTbody.innerHTML = rows.map(row => `
                 <tr>
                     ${row.map(cell => `<td>${escapeHtml(String(cell !== null && cell !== undefined ? cell : ''))}</td>`).join('')}
-                </tr>
-            `).join('');
-        } else if (typeof data[0] === 'object') {
-            const keys = Object.keys(data[0]);
-            leaderboardTheadTr.innerHTML = keys.map(k => `<th>${escapeHtml(k)}</th>`).join('');
-
-            leaderboardTbody.innerHTML = data.map(rowObj => `
-                <tr>
-                    ${keys.map(k => `<td>${escapeHtml(String(rowObj[k] !== undefined ? rowObj[k] : ''))}</td>`).join('')}
                 </tr>
             `).join('');
         }

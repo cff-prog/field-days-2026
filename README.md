@@ -1,6 +1,6 @@
 # Field Day Event Scoring SPA
 
-A mobile-first Single Page Application (SPA) designed for team captains to log scores during a 1-day Field Day event and view a live leaderboard. Hosted on **GitHub Pages** and backed by a **Google Apps Script Web App** connected to Google Sheets.
+A mobile-first Single Page Application (SPA) designed for team captains to log scores during a 1-day Field Day event and view a live leaderboard. Hosted on **GitHub Pages** and backed by a **Google Sheet** and **Google Apps Script Web App**.
 
 ## Core Features
 
@@ -14,20 +14,23 @@ A mobile-first Single Page Application (SPA) designed for team captains to log s
   - **The Jerk**: 4-member form (Gender, Weight per member).
   - **White Men Can't Jump**: 4-member form (Gender, Max Height, Free Throw Points per member).
 - 🔄 **Sequential / Batch POST Submissions**: Submits JSON payloads to the Google Apps Script Web App (`doPost`) using `text/plain` content type to prevent pre-flight CORS issues. Supports `offset: 0` to `3` for 4-member team events.
-- 📊 **Live Leaderboard Tab**: Fetches real-time overall rankings from `doGet?sheetName=Summary`.
+- 📊 **Direct Google Sheet Live Leaderboard**: Fetches real-time overall rankings directly from the Google Sheet (`Summary` tab) using Google's Visualization API endpoint (`gviz/tq`), bypassing Apps Script timeout issues on reads.
 
 ---
 
-## Google Apps Script Endpoint Setup
+## Configuration (`config.js`)
 
-1. Store your deployed Google Apps Script Web App URL in `config.js`:
+1. **Google Apps Script Web App URL** (`APPS_SCRIPT_URL`):
+   Used for writing scores via `POST`:
    ```javascript
    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec";
    ```
 
-2. Ensure your Apps Script `doPost(e)` and `doGet(e)` functions handle:
-   - **`POST`**: JSON body `{ sheetName, team, values, offset }`
-   - **`GET`**: Query string `?sheetName=Summary` returning a JSON array of rankings.
+2. **Google Sheet ID** (`SHEET_ID`):
+   Used for fast, direct reads of the leaderboard via `/gviz/tq`:
+   ```javascript
+   const SHEET_ID = "1eMIiGOeuSSAhp7nFRTJQasfZF0PVngAHuNzHg1kQbRc";
+   ```
 
 ---
 
