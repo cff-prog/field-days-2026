@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderTeamHeaderLocked(teamName) {
         teamHeaderContainer.innerHTML = `
             <div class="team-badge" id="team-badge">
-                Logging for ${escapeHtml(teamName)}
+                ${escapeHtml(teamName)}
             </div>
         `;
     }
