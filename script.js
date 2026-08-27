@@ -430,16 +430,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         showStatus(formStatus, 'info', 'Submitting score...');
 
         try {
-            const payloads = buildPayloads(eventName, selectedTeam);
+            const payload = buildPayload(eventName, selectedTeam);
 
-            // Execute POST requests (sequential or Promise.all)
-            for (const payload of payloads) {
-                await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-            }
+            await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
 
             showStatus(formStatus, 'success', `Successfully recorded score for ${selectedTeam} in ${eventName}!`);
             // Do not reset scoreForm or re-render dynamic fields so submitted values persist in inputs
@@ -451,62 +448,70 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    function buildPayloads(eventName, team) {
-        const payloads = [];
-
+    function buildPayload(eventName, team) {
         if (eventName === 'Dark Side of the Rainbow' || eventName === 'The Fast & The Furious') {
             const rx = document.getElementById('field-rx').value;
             const minutes = Number(document.getElementById('field-minutes').value || 0);
             const seconds = Number(document.getElementById('field-seconds').value || 0);
-            payloads.push({
+            return {
                 sheetName: eventName,
                 team: team,
                 values: [rx, minutes, seconds],
                 offset: 0
-            });
+            };
         } else if (eventName === 'The Three Amigos') {
             const calories = Number(document.getElementById('field-calories').value || 0);
-            payloads.push({
+            return {
                 sheetName: eventName,
                 team: team,
                 values: [calories],
                 offset: 0
-            });
+            };
         } else if (eventName === 'Tire Fire') {
             const rx = document.getElementById('field-rx').value;
             const reps = Number(document.getElementById('field-reps').value || 0);
-            payloads.push({
+            return {
                 sheetName: eventName,
                 team: team,
                 values: [rx, reps],
                 offset: 0
-            });
+            };
         } else if (eventName === 'The Jerk') {
+            const items = [];
             for (let i = 1; i <= 4; i++) {
                 const gender = document.getElementById(`field-gender-${i}`).value;
                 const weight = Number(document.getElementById(`field-weight-${i}`).value || 0);
-                payloads.push({
+                items.push({
                     sheetName: eventName,
                     team: team,
                     values: [gender, weight],
                     offset: i - 1
                 });
             }
+            return {
+                action: "batch",
+                items: items
+            };
         } else if (eventName === "White Men Can't Jump") {
+            const items = [];
             for (let i = 1; i <= 4; i++) {
                 const gender = document.getElementById(`field-gender-${i}`).value;
                 const height = Number(document.getElementById(`field-height-${i}`).value || 0);
                 const ftPoints = Number(document.getElementById(`field-ft-${i}`).value || 0);
-                payloads.push({
+                items.push({
                     sheetName: eventName,
                     team: team,
                     values: [gender, height, ftPoints],
                     offset: i - 1
                 });
             }
+            return {
+                action: "batch",
+                items: items
+            };
         }
 
-        return payloads;
+        return {};
     }
 
     // 5. Direct Google Sheet Reading via Google Visualization API (gviz/tq)

@@ -22,7 +22,18 @@ A mobile-first Single Page Application (SPA) designed for team captains to log s
   - **Tire Fire**: Rx/Scaled select, Total Reps.
   - **The Jerk**: 4-member form (Gender, Weight per member).
   - **White Men Can't Jump**: 4-member form (Gender, Max Height, Free Throw Points per member).
-- 🔄 **Sequential / Batch POST Submissions**: Submits JSON payloads to the Google Apps Script Web App (`doPost`) using `text/plain` content type to prevent pre-flight CORS issues. Supports `offset: 0` to `3` for 4-member team events.
+- 📦 **Batch POST Submissions for Multi-Member Events**: Submits JSON payloads to the Google Apps Script Web App (`doPost`) using `text/plain` content type to prevent pre-flight CORS issues. Multi-member 4-person events (*The Jerk* & *White Men Can't Jump*) send a single batch POST request:
+  ```json
+  {
+    "action": "batch",
+    "items": [
+      { "sheetName": "The Jerk", "team": "Team 4", "values": ["Male", 185], "offset": 0 },
+      { "sheetName": "The Jerk", "team": "Team 4", "values": ["Female", 135], "offset": 1 },
+      { "sheetName": "The Jerk", "team": "Team 4", "values": ["Male", 205], "offset": 2 },
+      { "sheetName": "The Jerk", "team": "Team 4", "values": ["Female", 145], "offset": 3 }
+    ]
+  }
+  ```
 - 📊 **Direct Google Sheet Live Leaderboard**: Fetches real-time overall rankings directly from the Google Sheet (`Summary` tab) using Google's Visualization API endpoint (`gviz/tq`), bypassing Apps Script timeout issues on reads.
 
 ---
