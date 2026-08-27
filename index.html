@@ -13,6 +13,20 @@
             <div id="team-header-container">
                 <!-- Team indicator badge or dropdown rendered dynamically -->
             </div>
+
+            <!-- Team Name Edit Controls -->
+            <div id="team-edit-container" class="team-edit-container" style="display: none;">
+                <button id="edit-team-btn" class="btn btn-secondary btn-sm">✏️ Edit Team Name</button>
+                <form id="team-edit-form" class="team-edit-form" style="display: none;">
+                    <input type="text" id="team-name-input" placeholder="New Team Name" required>
+                    <div class="team-edit-actions">
+                        <button type="submit" id="save-team-btn" class="btn btn-primary btn-sm">Save</button>
+                        <button type="button" id="cancel-team-btn" class="btn btn-secondary btn-sm">Cancel</button>
+                    </div>
+                </form>
+                <div id="team-edit-status" class="status-message"></div>
+            </div>
+
             <nav class="tabs">
                 <button id="tab-score-entry" class="tab-btn active" data-tab="score-entry">Score Entry</button>
                 <button id="tab-leaderboard" class="tab-btn" data-tab="leaderboard">Live Leaderboard</button>

@@ -1,6 +1,13 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // DOM Elements
     const teamHeaderContainer = document.getElementById('team-header-container');
+    const teamEditContainer = document.getElementById('team-edit-container');
+    const editTeamBtn = document.getElementById('edit-team-btn');
+    const teamEditForm = document.getElementById('team-edit-form');
+    const teamNameInput = document.getElementById('team-name-input');
+    const cancelTeamBtn = document.getElementById('cancel-team-btn');
+    const teamEditStatus = document.getElementById('team-edit-status');
+
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabViews = document.querySelectorAll('.tab-view');
     const eventSelect = document.getElementById('event-select');
@@ -13,23 +20,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const leaderboardTheadTr = document.getElementById('leaderboard-thead-tr');
     const leaderboardTbody = document.getElementById('leaderboard-tbody');
 
-    // 1. QR Code Parameter Parsing & Team Locking
+    // State Variables
     const urlParams = new URLSearchParams(window.location.search);
-    const teamParam = urlParams.get('team');
-    let selectedTeam = teamParam || '';
+    // 1. Support ?id= (row number, 1-based index) or fallback to ?team= (legacy)
+    const idParam = urlParams.get('id');
+    const legacyTeamParam = urlParams.get('team');
+    let teamId = idParam ? parseInt(idParam, 10) : null;
+    let selectedTeam = '';
+    let teamsList = []; // [{ id: 1, name: 'Team 1' }, ...]
 
-    if (teamParam) {
+    // Load Teams tab data
+    async function loadTeamsData() {
+        try {
+            const rows = await fetchSheetData('Teams');
+            teamsList = rows.map((r, idx) => ({
+                id: idx + 1,
+                name: r && r[0] ? String(r[0]).trim() : `Team ${idx + 1}`
+            })).filter(t => t.name !== '');
+        } catch (err) {
+            console.warn('Error loading Teams sheet tab, falling back to default 11 teams:', err);
+            teamsList = [];
+            for (let i = 1; i <= 11; i++) {
+                teamsList.push({ id: i, name: `Team ${i}` });
+            }
+        }
+    }
+
+    await loadTeamsData();
+
+    // Determine selected team and render header
+    if (teamId && !isNaN(teamId)) {
+        const found = teamsList.find(t => t.id === teamId);
+        selectedTeam = found ? found.name : `Team ${teamId}`;
+        renderTeamHeaderLocked(selectedTeam);
+        teamEditContainer.style.display = 'block';
+    } else if (legacyTeamParam) {
+        selectedTeam = legacyTeamParam;
+        const found = teamsList.find(t => t.name.toLowerCase() === legacyTeamParam.toLowerCase());
+        if (found) teamId = found.id;
+        renderTeamHeaderLocked(selectedTeam);
+        if (teamId) teamEditContainer.style.display = 'block';
+    } else {
+        renderTeamDropdown();
+    }
+
+    function renderTeamHeaderLocked(teamName) {
         teamHeaderContainer.innerHTML = `
             <div class="team-badge" id="team-badge">
-                Logging for ${escapeHtml(teamParam)}
+                Logging for ${escapeHtml(teamName)}
             </div>
         `;
-    } else {
+    }
+
+    function renderTeamDropdown() {
         let optionsHtml = '<option value="">-- Choose Your Team --</option>';
-        for (let i = 1; i <= 11; i++) {
-            const teamName = `Team ${i}`;
-            optionsHtml += `<option value="${teamName}">${teamName}</option>`;
+        if (teamsList.length === 0) {
+            for (let i = 1; i <= 11; i++) {
+                teamsList.push({ id: i, name: `Team ${i}` });
+            }
         }
+        teamsList.forEach(t => {
+            const selected = t.name === selectedTeam ? 'selected' : '';
+            optionsHtml += `<option value="${t.id}" data-name="${escapeHtml(t.name)}" ${selected}>${escapeHtml(t.name)}</option>`;
+        });
+
         teamHeaderContainer.innerHTML = `
             <div class="team-select-group">
                 <label for="global-team-select">Team:</label>
@@ -39,13 +93,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const globalTeamSelect = document.getElementById('global-team-select');
         globalTeamSelect.addEventListener('change', (e) => {
-            selectedTeam = e.target.value;
+            const selectedOpt = globalTeamSelect.options[globalTeamSelect.selectedIndex];
+            if (e.target.value) {
+                teamId = parseInt(e.target.value, 10);
+                selectedTeam = selectedOpt.getAttribute('data-name') || selectedOpt.text;
+                teamEditContainer.style.display = 'block';
+            } else {
+                teamId = null;
+                selectedTeam = '';
+                teamEditContainer.style.display = 'none';
+            }
             validateForm();
             if (selectedTeam && eventSelect.value) {
                 loadExistingScores(selectedTeam, eventSelect.value);
             }
         });
     }
+
+    // Team Name Edit Handlers
+    editTeamBtn.addEventListener('click', () => {
+        teamNameInput.value = selectedTeam;
+        teamEditForm.style.display = 'flex';
+        editTeamBtn.style.display = 'none';
+        teamEditStatus.style.display = 'none';
+    });
+
+    cancelTeamBtn.addEventListener('click', () => {
+        teamEditForm.style.display = 'none';
+        editTeamBtn.style.display = 'inline-flex';
+        teamEditStatus.style.display = 'none';
+    });
+
+    teamEditForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newTeamName = teamNameInput.value.trim();
+        if (!newTeamName) return;
+
+        if (!teamId) {
+            showStatus(teamEditStatus, 'error', 'No Team selected to edit.');
+            return;
+        }
+
+        showStatus(teamEditStatus, 'info', 'Updating team name...');
+        const saveTeamBtn = document.getElementById('save-team-btn');
+        saveTeamBtn.disabled = true;
+
+        try {
+            // POST to 'Teams' tab with offset = teamId - 1
+            const payload = {
+                sheetName: 'Teams',
+                team: newTeamName,
+                values: [newTeamName],
+                offset: teamId - 1
+            };
+
+            await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+
+            const oldTeamName = selectedTeam;
+            selectedTeam = newTeamName;
+
+            // Update in teamsList
+            const item = teamsList.find(t => t.id === teamId);
+            if (item) item.name = newTeamName;
+
+            // Re-render team display
+            if (idParam || legacyTeamParam) {
+                renderTeamHeaderLocked(newTeamName);
+            } else {
+                renderTeamDropdown();
+            }
+
+            teamEditForm.style.display = 'none';
+            editTeamBtn.style.display = 'inline-flex';
+            showStatus(teamEditStatus, 'success', `Team name updated to "${newTeamName}"!`);
+            setTimeout(() => { teamEditStatus.style.display = 'none'; }, 4000);
+
+            // Re-load scores if an event is selected
+            if (eventSelect.value) {
+                loadExistingScores(selectedTeam, eventSelect.value);
+            }
+        } catch (err) {
+            console.error('Failed to update team name:', err);
+            showStatus(teamEditStatus, 'error', `Failed to update team name: ${err.message || 'Network error'}`);
+        } finally {
+            saveTeamBtn.disabled = false;
+        }
+    });
 
     // 2. Navigation & Tabs
     tabBtns.forEach(btn => {

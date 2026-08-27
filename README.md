@@ -5,7 +5,8 @@ A mobile-first Single Page Application (SPA) designed for team captains to log s
 ## Core Features
 
 - 📱 **Mobile-First SPA**: Clean, responsive UI with smooth tab navigation for mobile devices.
-- 🏷️ **QR Code Team Locking**: Automatically parses `?team=Team%201` from the URL parameter to lock the user's team and display a badge. If absent, a dropdown lets the captain choose from Team 1 to Team 11.
+- 🆔 **QR Code Team Parameter (`?id=`)**: Automatically parses `?id=4` from the URL parameter, looking up the team name from row #4 of the `Teams` tab in the Google Sheet.
+- ✏️ **Team Name Editing**: Team captains can edit their team's name directly in the application interface. Submitting an updated team name saves it to the `Teams` tab (`sheetName: "Teams"`) in the Google Sheet using row offset (`id - 1`). All linked spreadsheet formulas update automatically!
 - 📋 **Dynamic Event Form Schemas**: Customized inputs for each of the 6 events:
   - **Dark Side of the Rainbow**: Rx/Scaled select, Minutes, Seconds.
   - **The Fast & The Furious**: Rx/Scaled select, Minutes, Seconds.
@@ -21,32 +22,21 @@ A mobile-first Single Page Application (SPA) designed for team captains to log s
 ## Configuration (`config.js`)
 
 1. **Google Apps Script Web App URL** (`APPS_SCRIPT_URL`):
-   Used for writing scores via `POST`:
+   Used for writing scores and team name updates via `POST`:
    ```javascript
    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec";
    ```
 
 2. **Google Sheet ID** (`SHEET_ID`):
-   Used for fast, direct reads of the leaderboard via `/gviz/tq`:
+   Used for fast, direct reads of the leaderboard and team names via `/gviz/tq`:
    ```javascript
    const SHEET_ID = "1eMIiGOeuSSAhp7nFRTJQasfZF0PVngAHuNzHg1kQbRc";
    ```
 
 ---
 
-## Hosting on GitHub Pages
-
-1. Push this repository to GitHub.
-2. In your repository on GitHub.com, go to **Settings** -> **Pages**.
-3. Under **Build and deployment**:
-   - Set **Source** to `Deploy from a branch`.
-   - Set **Branch** to `main` (or `master`) and folder to `/ (root)`.
-4. Click **Save**. Your SPA will be hosted at `https://<your-username>.github.io/<repository-name>/`.
-
----
-
 ## QR Code Parameter Usage
 
-Team captains can scan event-specific QR codes with pre-filled team parameters:
-- `https://<your-username>.github.io/<repository-name>/?team=Team%201`
-- `https://<your-username>.github.io/<repository-name>/?team=Team%203`
+Team captains can scan team-specific QR codes with pre-filled row ID parameters:
+- `https://<your-username>.github.io/<repository-name>/?id=1`
+- `https://<your-username>.github.io/<repository-name>/?id=4`
