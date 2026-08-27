@@ -442,8 +442,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             showStatus(formStatus, 'success', `Successfully recorded score for ${selectedTeam} in ${eventName}!`);
-            scoreForm.reset();
-            renderFormForEvent(eventName);
+            // Do not reset scoreForm or re-render dynamic fields so submitted values persist in inputs
         } catch (err) {
             console.error('Submission error:', err);
             showStatus(formStatus, 'error', `Failed to submit score: ${err.message || 'Network error'}`);
