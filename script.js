@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const newTeamName = teamNameInput.value.trim();
         if (!newTeamName) return;
 
-        if (!teamId) {
+        if (!selectedTeam) {
             showStatus(teamEditStatus, 'error', 'No Team selected to edit.');
             return;
         }
@@ -139,12 +139,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveTeamBtn.disabled = true;
 
         try {
-            // POST to 'Teams' tab with offset = teamId - 1
+            // Send POST payload specifically targeting 'renameTeam' action
             const payload = {
-                sheetName: 'Teams',
-                team: newTeamName,
-                values: [newTeamName],
-                offset: teamId - 1
+                action: "renameTeam",
+                oldName: selectedTeam,
+                newName: newTeamName
             };
 
             await fetch(APPS_SCRIPT_URL, {
@@ -157,8 +156,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             selectedTeam = newTeamName;
 
             // Update in teamsList
-            const item = teamsList.find(t => t.id === teamId);
-            if (item) item.name = newTeamName;
+            if (teamId) {
+                const item = teamsList.find(t => t.id === teamId);
+                if (item) item.name = newTeamName;
+            }
 
             // Re-render team display
             if (idParam || legacyTeamParam) {

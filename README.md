@@ -6,7 +6,15 @@ A mobile-first Single Page Application (SPA) designed for team captains to log s
 
 - 📱 **Mobile-First SPA**: Clean, responsive UI with smooth tab navigation for mobile devices.
 - 🆔 **QR Code Team Parameter (`?id=`)**: Automatically parses `?id=4` from the URL parameter, looking up the team name from row #4 of the `Teams` tab in the Google Sheet.
-- ✏️ **Team Name Editing**: Team captains can edit their team's name directly in the application interface. Submitting an updated team name saves it to the `Teams` tab (`sheetName: "Teams"`) in the Google Sheet using row offset (`id - 1`). All linked spreadsheet formulas update automatically!
+- ✏️ **Team Name Editing**: Team captains can edit their team's name directly in the application interface. Submitting an updated team name sends a POST request with payload:
+  ```json
+  {
+    "action": "renameTeam",
+    "oldName": "Team 1",
+    "newName": "Thunderbolts"
+  }
+  ```
+  This renames the team in the `Teams` tab of the Google Sheet, and all linked spreadsheet formulas update automatically!
 - 📋 **Dynamic Event Form Schemas**: Customized inputs for each of the 6 events:
   - **Dark Side of the Rainbow**: Rx/Scaled select, Minutes, Seconds.
   - **The Fast & The Furious**: Rx/Scaled select, Minutes, Seconds.
